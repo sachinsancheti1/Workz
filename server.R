@@ -26,6 +26,12 @@ shinyServer(function(input, output) {
     return(is.null(input$file))
   })
   
+  output$colwidth <- reactive({
+    if(is.null(input$file))
+      return(5)
+    return(2)
+  })
+  
   outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
   
   output$downloadData <- downloadHandler(
@@ -41,15 +47,15 @@ shinyServer(function(input, output) {
     if(is.null(input$file))
       return(h5("New to the application? Start by downloading the Excel file here"))
     tabsetPanel(id='cond',
-                tabPanel("Datewise",
-                         dataTableOutput('daterangetable')),
-                tabPanel("Ideas",
-                         dataTableOutput('ideas')),
                 tabPanel("Group to view",
                          h5("Ideas"),
                          dataTableOutput('ideasbygroup')),
                 #                          h5("Groupwise Table"),
                 #                          dataTableOutput('groupwisetable')),
+                tabPanel("Datewise",
+                         dataTableOutput('daterangetable')),
+                tabPanel("Ideas",
+                         dataTableOutput('ideas')),
                 tabPanel("People",
                          dataTableOutput('peoplewisetable'))
     )
