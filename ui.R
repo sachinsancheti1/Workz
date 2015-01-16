@@ -1,5 +1,5 @@
 library(shiny)
-x = 2
+x = 3
 shinyUI(fluidPage(#theme = "bootstrap-responsive.min.css",
   #  includeCSS("font-awesome.css"),
   #   tags$head(

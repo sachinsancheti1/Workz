@@ -5,21 +5,38 @@ suppressPackageStartupMessages(library(dplyr))
 library(reshape2)
 shinyServer(function(input, output) {
   dummytable <- function(){
-    tb = tbl_df(read.xls("Works-template.xlsx"))
+    tb = tbl_df(read.xls("Works-template.xlsm"))
     tb %>%
-      mutate(Date = as.Date(as.POSIXct(Date*60*60*24,origin = "1899-12-30"))) %>%
+      mutate(Date = ifelse(is.na(Date),as.Date("1970-01-01"),as.Date(as.POSIXct(Date*60*60*24,origin = "1899-12-30")))) %>%
       arrange(Date)
   }
   
+  datefix <- function(x){
+    as.Date.numeric(ifelse(is.na(x),as.Date("1970-01-01"),as.Date(as.POSIXct(x*60*60*24,origin = "1899-12-30"))),origin = "1970-01-01")
+  }
+  
+  maxDate <- function(x,y){
+    if(x == "NA" | x == "<NA>" | is.na(x))
+      return(y)
+    else if(y == "NA" | y == "<NA>" | is.na(y))
+      return(x)
+    else
+      max(x,y)
+  }
   wk <- reactive({
-    #tb = tbl_df(read.xls("Works.xlsx"))
+    #tb2 = tbl_df(read.xls("Online Advertisements followup (2).xlsm", sheet = "Discussions"))
     if(is.null(input$file))
       return(NULL)
     file1 <- input$file
-    tb = tbl_df(read.xls(file1$datapath))
-    tb %>%
-      mutate(Date = as.Date(as.POSIXct(Date*60*60*24,origin = "1899-12-30"))) %>%
+    tb1 = tbl_df(read.xls(file1$datapath, sheet = "Leads"))
+    tb2 = tbl_df(read.xls(file1$datapath, sheet = "Discussions"))
+    tb1 = tb1 %>%
+      mutate(Date.Contacted = datefix(Date.Contacted)) %>%
+      arrange(Date.Contacted)
+    tb2 = tb2 %>%
+      mutate(Date = datefix(Date)) %>%
       arrange(Date)
+    list(tb1, tb2, left_join(tb2,tb1))
   })
   
   output$fileUploaded <- reactive({
@@ -35,9 +52,9 @@ shinyServer(function(input, output) {
   outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
   
   output$downloadData <- downloadHandler(
-    filename = paste('Template-', Sys.Date(), '.xlsx', sep=''),
+    filename = paste('Template-', Sys.Date(), '.xlsm', sep=''),
     content = function(file) {
-      file.copy('Works-template.xlsx', file, overwrite = TRUE)
+      file.copy('Works-template.xlsm', file, overwrite = TRUE)
       #file.remove('BatchPL.pdf')
     }
   )
@@ -52,7 +69,7 @@ shinyServer(function(input, output) {
                          dataTableOutput('ideasbygroup')),
                 #                          h5("Groupwise Table"),
                 #                          dataTableOutput('groupwisetable')),
-                tabPanel("Datewise",
+                tabPanel("Datewise",h3("Range of activity between dates"),
                          dataTableOutput('daterangetable')),
                 tabPanel("Ideas",
                          dataTableOutput('ideas')),
@@ -62,9 +79,14 @@ shinyServer(function(input, output) {
   })
   output$daterangetable <- renderDataTable(expr = {
     cd <- input$daterange
-    wk() %>%
-      filter(Date>cd[1],
-             Date<cd[2]) %>%
+    
+    wk()[[3]] %>%
+      rowwise() %>%
+      #mutate(Date = as.numeric(as.Date(Date)),Date.Contacted = as.numeric(as.Date(Date.Contacted))) %>%
+      mutate(Dday = maxDate(Date,Date.Contacted)) %>%
+      filter(as.Date.numeric(Dday,origin = "1970-01-01")>cd[1],
+             as.Date.numeric(Dday,origin = "1970-01-01")<cd[2]) %>%
+      select(-Dday) %>%
       as.data.frame},
     options = list(rowCallback = I(
       'function(row, data) {
@@ -76,47 +98,47 @@ shinyServer(function(input, output) {
   
   output$daterangeui <- renderUI({
     dateRangeInput('daterange',"Date Range of works done",
-                   start = min(wk()$Date),
-                   end = max(wk()$Date))
+                   start = min(wk()[[3]]$Date),
+                   end = max(wk()[[3]]$Date))
   })
   
   output$groupui <- renderUI({
-    checkboxGroupInput('group',"Group to view",choices = levels(wk()$Division),selected = "All")
+    checkboxGroupInput('group',"Group to view",choices = levels(wk()[[3]]$Division),selected = "All")
   })
   
   output$peopleui <- renderUI({
-    checkboxGroupInput('people',"Coordinating People",choices = levels(wk()$Coordinating.with),selected = wk()$Coordinating.with)
+    checkboxGroupInput('people',"Coordinating People",choices = levels(wk()[[3]]$Coordinating.with),selected = wk()[[3]]$Coordinating.with)
   })
   
   
   output$ideas <- renderDataTable({
-    wk() %>%
-      filter(Status.of.work=="Idea Conceived") %>%
+    wk()[1] %>%
+      #filter(Status.of.work=="Idea Conceived") %>%
       as.data.frame    
   })
   
   output$ideasbygroup <- renderDataTable({
     #dummytable = rbind(c("","","",))
-    casted = wk() %>%
-      rbind(dummytable()) %>%
-      group_by(Initiative,Division,Status.of.work) %>%
+    casted = wk()[[3]] %>%
+      #rbind(dummytable()) %>%
+      group_by(Initiative,Division,Status.of.work,Date.Contacted) %>%
       summarise(tDate = toString(max(Date))) %>%
-      dcast(Initiative+Division~Status.of.work) %>%
-      tbl_df()
+      dcast(Initiative+Division+Date.Contacted~Status.of.work) %>%
+      tbl_df() %>%
+      filter(Division %in% input$group)
     
     colnames(casted) <- make.names(colnames(casted))
-    
-    casted %>%
-      filter(Division %in% input$group) %>%
-      mutate(outstanding = ifelse(is.na(Implement) & nchar(Idea.Conceived)>2,
-                                  as.numeric(Sys.Date()-as.Date(Idea.Conceived,"%Y-%m-%d")),
-                                  0)) %>%
-      inner_join(wk() %>% 
-                   group_by(Initiative) %>% 
-                   summarise(Coordinators = pasting(Coordinating.with)) %>% 
-                   ungroup %>%
-                   unique) %>%
-      select(Initiative,Idea.Conceived,Development,Implement,outstanding,Coordinators) %>%
+    #casted[,4:dim(casted)[2]] = as.Date(casted[,4:dim(casted)[2]])
+    #casted$outstanding = max(casted[,4:dim(casted)[2]])
+    #       mutate(outstanding = ifelse(is.na(Implement) & nchar(Idea.Conceived)>2,
+    #                                   as.numeric(Sys.Date()-as.Date(Idea.Conceived,"%Y-%m-%d")),
+    #                                   0)) %>%
+    inner_join(casted,wk()[[3]] %>% 
+                 group_by(Initiative) %>% 
+                 summarise(Coordinators = pasting(Coordinating.with)) %>% 
+                 ungroup %>%
+                 unique) %>%
+      #select(Initiative,Idea.Conceived,Development,Implement,outstanding,Coordinators) %>%
       as.data.frame
   },
   options = list(
@@ -135,13 +157,13 @@ shinyServer(function(input, output) {
     paste(unique(x), collapse = ",")
   )
   output$groupwisetable <- renderDataTable({
-    wk() %>%
+    wk()[[3]] %>%
       filter(Division %in% input$group) %>%
       as.data.frame
   })
   
   output$peoplewisetable <- renderDataTable({
-    wk() %>%
+    wk()[[3]] %>%
       filter(Coordinating.with %in% input$people) %>%
       as.data.frame
   })
