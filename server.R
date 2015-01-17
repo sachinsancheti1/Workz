@@ -36,7 +36,10 @@ shinyServer(function(input, output) {
     tb2 = tb2 %>%
       mutate(Date = datefix(Date)) %>%
       arrange(Date)
-    list(tb1, tb2, left_join(tb2,tb1))
+    list(tb1, tb2, inner_join(tb2,tb1,by = c("Initiative"="Initiative",
+                                           "Division" = "Division",
+                                           "Site" = "Site",
+                                           "Contact.Details" = "Contact.Details")))
   })
   
   output$fileUploaded <- reactive({
