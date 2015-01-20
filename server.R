@@ -39,7 +39,8 @@ shinyServer(function(input, output) {
     list(tb1, tb2, inner_join(tb2,tb1,by = c("Initiative"="Initiative",
                                            "Division" = "Division",
                                            "Site" = "Site",
-                                           "Contact.Details" = "Contact.Details")))
+                                           "Contact.Details" = "Contact.Details",
+                                           "Email.ID"="Email.ID")))
   })
   
   output$fileUploaded <- reactive({
@@ -106,11 +107,11 @@ shinyServer(function(input, output) {
   })
   
   output$groupui <- renderUI({
-    checkboxGroupInput('group',"Group to view",choices = levels(wk()[[3]]$Division),selected = "All")
+    checkboxGroupInput('group',"Group to view",choices = levels(as.factor(wk()[[3]]$Division)),selected = "All")
   })
   
   output$peopleui <- renderUI({
-    checkboxGroupInput('people',"Coordinating People",choices = levels(wk()[[3]]$Coordinating.with),selected = wk()[[3]]$Coordinating.with)
+    checkboxGroupInput('people',"Coordinating People",choices = levels(as.factor(wk()[[3]]$Coordinating.with)),selected = wk()[[3]]$Coordinating.with)
   })
   
   
