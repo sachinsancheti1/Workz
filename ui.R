@@ -1,6 +1,6 @@
 library(shiny)
 x = 3
-shinyUI(fluidPage(#theme = "bootstrap-responsive.min.css",
+shinyUI(fluidPage(theme = "bootstrap.css",
   #  includeCSS("font-awesome.css"),
   #   tags$head(
   #     tags$style(HTML(""))
