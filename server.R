@@ -5,7 +5,7 @@ suppressPackageStartupMessages(library(dplyr))
 library(reshape2)
 shinyServer(function(input, output) {
   dummytable <- function(){
-    tb = tbl_df(read.xls("Works-template.xlsm"))
+    tb = tbl_df(read.xls("Works-Template.xlsm"))
     tb %>%
       mutate(Date = ifelse(is.na(Date),as.Date("1970-01-01"),as.Date(as.POSIXct(Date*60*60*24,origin = "1899-12-30")))) %>%
       arrange(Date)
@@ -58,7 +58,7 @@ shinyServer(function(input, output) {
   output$downloadData <- downloadHandler(
     filename = paste('Template-', Sys.Date(), '.xlsm', sep=''),
     content = function(file) {
-      file.copy('Works-template.xlsm', file, overwrite = TRUE)
+      file.copy('Works-Template.xlsm', file, overwrite = TRUE)
       #file.remove('BatchPL.pdf')
     }
   )
