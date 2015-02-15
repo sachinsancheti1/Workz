@@ -66,7 +66,10 @@ shinyServer(function(input, output) {
   
   output$maindisplay <- renderUI({
     if(is.null(input$file))
-      return(h5("New to the application? Start by downloading the Excel file here"))
+      return(tagList(tags$h5(
+        "New to the application? Start by downloading the Excel file here"),
+        tags$h4("New template update available with OUTLOOK EXPORT and EVENTS options")
+        ))
     tabsetPanel(id='cond',
                 tabPanel("Group to view",
                          h5("Ideas"),
