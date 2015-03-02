@@ -20,7 +20,9 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                   conditionalPanel(condition = "input.cond == 'People'",
                                    uiOutput('peopleui')),
                   conditionalPanel(condition = "output.fileUploaded",
-                                   downloadButton('downloadData', 'Download'))
+                                   downloadButton('downloadData', 'Download')),
+                  conditionalPanel(condition = "input.cond == 'Storyline'",
+                                   uiOutput('stories'))
            ),
            mainPanel(width = 12-x,
                   uiOutput('maindisplay')

@@ -19,3 +19,5 @@ New update on 15 Feb 2015
 * Ctrl + u - When pressed on an **Initiative cell**, will return all the events that have been scheduled for this Initiative
 * Ctrl + i - When pressed on an **Initiative cell**, a new event will be prompted for creation
 * Ctrl + o - Export to **Microsoft Outlook** will take place for events which were not earlier **Done**
+
+To enable macros for the excel template and working files, please use the [help link](http://www.nhhfa.org/data-planning/demographicdata/EnablingMacros_Excel.pdf).

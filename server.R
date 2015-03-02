@@ -37,10 +37,10 @@ shinyServer(function(input, output) {
       mutate(Date = datefix(Date)) %>%
       arrange(Date)
     list(tb1, tb2, inner_join(tb2,tb1,by = c("Initiative"="Initiative",
-                                           "Division" = "Division",
-                                           "Site" = "Site",
-                                           "Contact.Details" = "Contact.Details",
-                                           "Email.ID"="Email.ID")))
+                                             "Division" = "Division",
+                                             "Site" = "Site",
+                                             "Contact.Details" = "Contact.Details",
+                                             "Email.ID"="Email.ID")))
   })
   
   output$fileUploaded <- reactive({
@@ -69,7 +69,7 @@ shinyServer(function(input, output) {
       return(tagList(tags$h5(
         "New to the application? Start by downloading the Excel file here"),
         tags$h4("New template update available with OUTLOOK EXPORT and EVENTS options")
-        ))
+      ))
     tabsetPanel(id='cond',
                 tabPanel("Group to view",
                          h5("Ideas"),
@@ -81,9 +81,20 @@ shinyServer(function(input, output) {
                 tabPanel("Ideas",
                          dataTableOutput('ideas')),
                 tabPanel("People",
-                         dataTableOutput('peoplewisetable'))
+                         dataTableOutput('peoplewisetable')),
+                tabPanel("Storyline",
+                         dataTableOutput('storyline'))
     )
   })
+  
+  output$storyline <- renderDataTable({
+    cd <- input$daterange
+    wk()[[2]] %>%
+      filter(Initiative==input$stry) %>%
+      select(Date,Notes,Status.of.work) %>%
+      as.data.frame
+  })
+  
   output$daterangetable <- renderDataTable(expr = {
     cd <- input$daterange
     
@@ -107,6 +118,10 @@ shinyServer(function(input, output) {
     dateRangeInput('daterange',"Date Range of works done",
                    start = min(wk()[[3]]$Date),
                    end = max(wk()[[3]]$Date))
+  })
+  
+  output$stories <- renderUI({
+    selectInput('stry',"Pick the topic",choices = levels(as.factor(wk()[[1]]$Initiative)))
   })
   
   output$groupui <- renderUI({
